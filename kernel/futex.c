@@ -2897,6 +2897,10 @@ int handle_futex_death(u32 __user *uaddr, struct task_struct *curr, int pi)
 {
 	u32 uval, uninitialized_var(nval), mval;
 
+	/* Futex address must be 32bit aligned */
+	if ((((unsigned long)uaddr) % sizeof(*uaddr)) != 0)
+		return -1;
+
 retry:
 	if (get_user(uval, uaddr))
 		return -1;
@@ -3118,6 +3122,9 @@ SYSCALL_DEFINE6(futex, u32 __user *, uaddr, int, op, u32, val,
 }
 
 static void __init futex_detect_cmpxchg(void)
+#if defined(__clang__) && IS_ENABLED(CONFIG_ARM64)
+__attribute__((optnone))
+#endif
 {
 #ifndef CONFIG_HAVE_FUTEX_CMPXCHG
 	u32 curval;
